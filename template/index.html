@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spam Email Detector</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .card-body {
+            padding: 2rem;
+        }
+        h1 {
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .form-control {
+            border: 2px solid #e1e5ea;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+        }
+        .btn-primary {
+            background-color: #4a90e2;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #3a7bc8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+        }
+        .result {
+            transition: all 0.3s ease;
+        }
+        .alert {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .alert-heading {
+            font-weight: bold;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Spam Email Detector</h1>
+        <div class="card shadow">
+            <div class="card-body">
+                <form id="spamForm">
+                    <div class="mb-3">
+                        <label for="emailText" class="form-label">Enter your email content:</label>
+                        <textarea class="form-control" id="emailText" rows="6" placeholder="Type or paste your email here..."></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Check for Spam</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="result" class="mt-4 result"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('spamForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            let emailText = document.getElementById('emailText').value;
+            let resultDiv = document.getElementById('result');
+
+            resultDiv.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+            try {
+                let response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: emailText }),
+                });
+
+                if (response.ok) {
+                    let result = await response.json();
+                    let isSpam = result.prediction === 1;
+                    let output = isSpam ? 'Spam Detected' : 'Not Spam';
+                    let alertClass = isSpam ? 'alert-danger' : 'alert-success';
+                    let icon = isSpam ? '&#9888;' : '&#10004;';
+
+                    resultDiv.innerHTML = `
+                        <div class="alert ${alertClass}" role="alert">
+                            <h4 class="alert-heading">${icon} ${output}</h4>
+                            <p>Our model predicts that this email is ${isSpam ? 'likely to be spam' : 'probably not spam'}.</p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Failed to get a response from the server.');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-warning" role="alert">
+                        <h4 class="alert-heading">&#9888; Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
